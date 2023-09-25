@@ -15,11 +15,11 @@ fn get_tokenizer() -> Tokenizer {
 fn add_lines() {
     let mut dataset = LLMDataset::new(Vec::new(), Device::Cpu, get_tokenizer());
     dataset
-        .add_line("This is a test line.".to_string(), true)
+        .add_line("This is a test line.".to_string(), true, "</s>".into())
         .unwrap();
     assert_eq!(dataset.length(), 1);
     dataset
-        .add_line("This is also test line.".to_string(), false)
+        .add_line("This is also test line.".to_string(), false, "</s>".into())
         .unwrap();
     assert_eq!(dataset.length(), 2);
 }
@@ -28,32 +28,32 @@ fn add_lines() {
 fn get_next() {
     let mut dataset = LLMDataset::new(Vec::new(), Device::Cpu, get_tokenizer());
     dataset
-        .add_line("This is a test line.".to_string(), true)
+        .add_line("This is a test line.".to_string(), true, "</s>".into())
         .unwrap();
 
     let mut iter = LLMDatasetIter::new_shuffled(&dataset, 1);
     let next = iter.next().unwrap();
     assert!(next.input.attention_mask.is_some());
-    assert_eq!(next.input.ids.dim(1).unwrap(), 6);
+    assert_eq!(next.input.ids.dim(1).unwrap(), 8);
 
     assert!(next.target.attention_mask.is_some());
-    assert_eq!(next.target.ids.dim(1).unwrap(), 6);
+    assert_eq!(next.target.ids.dim(1).unwrap(), 8);
 }
 
 #[test]
 fn batches() {
     let mut dataset = LLMDataset::new(Vec::new(), Device::Cpu, get_tokenizer());
     dataset
-        .add_line("This is test line 1.".to_string(), true)
+        .add_line("This is test line 1.".to_string(), true, "</s>".into())
         .unwrap();
     dataset
-        .add_line("This is test line 2.".to_string(), true)
+        .add_line("This is test line 2.".to_string(), true, "</s>".into())
         .unwrap();
     dataset
-        .add_line("This is test line 3.".to_string(), true)
+        .add_line("This is test line 3.".to_string(), true, "</s>".into())
         .unwrap();
     dataset
-        .add_line("This is test line 4.".to_string(), true)
+        .add_line("This is test line 4.".to_string(), true, "</s>".into())
         .unwrap();
 
     let mut iter = LLMDatasetIter::new_shuffled(&dataset, 2);
@@ -63,4 +63,3 @@ fn batches() {
     assert_eq!(next.input.attention_mask.unwrap().dim(0).unwrap(), 2);
     assert_eq!(next.target.attention_mask.unwrap().dim(0).unwrap(), 2);
 }
-

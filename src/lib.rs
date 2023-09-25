@@ -46,7 +46,13 @@ impl LLMDataset {
     }
 
     /// Add a line of data to this dataset.
-    pub fn add_line(&mut self, line: String, add_special_toks: bool) -> TokenizerResult<()> {
+    pub fn add_line(
+        &mut self,
+        mut line: String,
+        add_special_toks: bool,
+        eos_tok: String,
+    ) -> TokenizerResult<()> {
+        line.push_str(&eos_tok);
         let encoded = self.tokenizer.encode(line, add_special_toks)?;
         self.data.push(DatasetLine {
             ids: encoded.get_ids().to_vec(),
