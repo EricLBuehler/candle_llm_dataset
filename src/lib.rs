@@ -77,6 +77,20 @@ impl LLMDataset {
         self.data.len()
     }
 
+    /// Sets the device of this dataset, returning the old device.
+    pub fn set_device(&mut self, device: Device) -> Device {
+        let old = self.device.clone();
+        self.device = device;
+        old
+    }
+
+    /// Sets the tokenizer for this dataset, returning the old tokenizer.
+    pub fn set_tokenizer(&mut self, tokenizer: Tokenizer) -> Tokenizer {
+        let old = self.tokenizer.clone();
+        self.tokenizer = tokenizer;
+        old
+    }
+
     /// Add all the lines from an iterator to this dataset. The iterator must have an item type of `String`.
     ///
     /// When adding lines, add_special_toks is set to true.
