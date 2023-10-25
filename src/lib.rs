@@ -45,14 +45,18 @@ impl LLMDataset {
         }
     }
 
-    /// Add a line of data to this dataset.
+    /// Add a line of data to this dataset. If either bos or eos are None, then they are automatically converted to "".
     pub fn add_line(
         &mut self,
         mut line: String,
         add_special_toks: bool,
-        eos_tok: String,
+        bos_tok: Option<String>,
+        eos_tok: Option<String>,
     ) -> TokenizerResult<()> {
-        line.push_str(&eos_tok);
+        if !add_special_toks {
+            line.insert_str(0, &bos_tok.unwrap_or_default());
+            line.push_str(&eos_tok.unwrap_or_default());
+        }
         let encoded = self.tokenizer.encode(line, add_special_toks)?;
         self.data.push(DatasetLine {
             ids: encoded.get_ids().to_vec(),
@@ -71,6 +75,39 @@ impl LLMDataset {
     /// Gets the number of lines in the dataset.
     pub fn length(&self) -> usize {
         self.data.len()
+    }
+
+    /// Add all the lines from an iterator to this dataset. The iterator must have an item type of `String`.
+    ///
+    /// When adding lines, add_special_toks is set to true.
+    pub fn from_iter<I: IntoIterator<Item = String>>(
+        iter: I,
+        device: Device,
+        tokenizer: Tokenizer,
+    ) -> Self {
+        let mut this = Self::new(Vec::new(), device, tokenizer);
+        for line in iter {
+            let _ = this.add_line(line, true, None, None);
+        }
+        this
+    }
+
+    /// Add all the lines from an iterator to this dataset. The iterator must have an item type of `String`.
+    ///
+    /// When adding lines, add_special_toks is set to false and bos/eos tokens should be specified. If either are None, they are automatically
+    /// converted to "".
+    pub fn from_iter_bos_eos<I: IntoIterator<Item = String>>(
+        iter: I,
+        device: Device,
+        tokenizer: Tokenizer,
+        bos_tok: Option<String>,
+        eos_tok: Option<String>,
+    ) -> Self {
+        let mut this = Self::new(Vec::new(), device, tokenizer);
+        for line in iter {
+            let _ = this.add_line(line, false, bos_tok.clone(), eos_tok.clone());
+        }
+        this
     }
 }
 
