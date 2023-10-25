@@ -6,7 +6,7 @@ extern crate rand;
 use rand::seq::SliceRandom;
 
 use candle_core::{Device, Tensor};
-use tokenizers::{Result as TokenizerResult, Tokenizer};
+use tokenizers::{Encoding, Result as TokenizerResult, Tokenizer};
 
 pub struct DatasetLine {
     pub ids: Vec<u32>,
@@ -58,6 +58,15 @@ impl LLMDataset {
             line.push_str(&eos_tok.unwrap_or_default());
         }
         let encoded = self.tokenizer.encode(line, add_special_toks)?;
+        self.data.push(DatasetLine {
+            ids: encoded.get_ids().to_vec(),
+            attention_mask: Some(encoded.get_attention_mask().to_vec()),
+        });
+        Ok(())
+    }
+
+    /// Add a line of pre-tokenized data to this dataset.
+    pub fn add_line_tokenized(&mut self, encoded: Encoding) -> TokenizerResult<()> {
         self.data.push(DatasetLine {
             ids: encoded.get_ids().to_vec(),
             attention_mask: Some(encoded.get_attention_mask().to_vec()),
@@ -120,6 +129,19 @@ impl LLMDataset {
         let mut this = Self::new(Vec::new(), device, tokenizer);
         for line in iter {
             let _ = this.add_line(line, false, bos_tok.clone(), eos_tok.clone());
+        }
+        this
+    }
+
+    /// Add all the lines from an iterator to this dataset. The iterator must have an item type of `Encoding`.
+    pub fn from_iter_tokenized<I: IntoIterator<Item = Encoding>>(
+        iter: I,
+        device: Device,
+        tokenizer: Tokenizer,
+    ) -> Self {
+        let mut this = Self::new(Vec::new(), device, tokenizer);
+        for line in iter {
+            let _ = this.add_line_tokenized(line);
         }
         this
     }
